@@ -1,0 +1,89 @@
+---
+title: "Weather Events"
+author: "Mahesh Nepal"
+date: "March 23, 2016"
+---
+
+Synopsis
+---
+
+The purpose of this analysis is to answer the following questions:
+
+1.Across the United States, which types of events (as indicated in the EVTYPE variable) are most harmful with respect to population health?
+2.Across the United States, which types of events have the greatest economic consequences?
+
+
+DataProcessing
+---
+
+First, the data is loaded into the workspace. Here, we load only the required columns for our analysis.
+```{r}
+storm_data <- read.csv(bzfile("repdata-data-StormData.csv.bz2"), header = T)
+storm_data_lean <- storm_data[, c("EVTYPE", "FATALITIES", "INJURIES", "PROPDMG")]
+
+storm_data_lean$EVTYPE <- gsub("^HEAT$", "EXCESSIVE HEAT", storm_data_lean$EVTYPE)
+storm_data_lean$EVTYPE <- gsub("^TSTM WIND$", "THUNDERSTORM WIND", storm_data_lean$EVTYPE)
+storm_data_lean$EVTYPE <- gsub("^THUNDERSTORM WIND$", "THUNDERSTORM WINDS", storm_data_lean$EVTYPE)
+```
+
+The following snippet shows the aggregate of the data of events that cause the **Fatalities**, **Injuries** and **Property Damage** respectively.
+
+**Aggregate Fatalities**
+```{r}
+## aggregate fatalities
+agg_fatalities <- aggregate(storm_data_lean$FATALITIES, by = list(storm_data_lean$EVTYPE), FUN = sum, na.rm = T)
+colnames(agg_fatalities) <- c("event_type", "total_fatality")
+sorted_fatalities <- agg_fatalities[order(-agg_fatalities$total_fatality),]
+top_fatalities <- sorted_fatalities[1:10, ]
+top_fatalities$event_type <- factor(top_fatalities$event_type, levels = top_fatalities$event_type, ordered = T)
+```
+
+**Aggregate Injuries**
+```{r}
+## aggregate injuries
+agg_injuries <- aggregate(storm_data_lean$INJURIES, by = list(storm_data_lean$EVTYPE), FUN=sum, na.rm = T)
+colnames(agg_injuries) = c("event_type", "total_injury")
+sorted_injuries <- agg_injuries[order(-agg_injuries$total_injury),] 
+top_injuries <- sorted_injuries[1:10,]
+top_injuries$event_type <- factor(top_injuries$event_type, levels = top_injuries$event_type, ordered = T)
+```
+
+**Aggregate Property Damage**
+```{r}
+## aggregate property damage
+agg_property_damage <- aggregate(storm_data_lean$PROPDMG, by = list(storm_data_lean$EVTYPE), FUN = sum, na.rm = T)
+colnames(agg_property_damage) = c("event_type", "total_property_damage")
+sorted_property_damage <- agg_property_damage[order(-agg_property_damage$total_property_damage),] 
+top_property_damage <- sorted_property_damage[1:10,]
+top_property_damage$event_type <- factor(top_property_damage$event_type, levels = top_property_damage$event_type, ordered = T)
+```
+
+
+Results
+---
+The results of the analysis are being illustrated by the following plot
+
+**Fatalities**
+```{r}
+library(ggplot2)
+ggplot(data=top_fatalities, aes(x=event_type, y=total_fatality)) + 
+    geom_bar(stat="identity") + xlab("Event type") + ylab("Total fatalities") + 
+    ggtitle("Fatalities By Event Type") +
+    theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+
+**Injuries**
+```{r}
+ggplot(data=top_injuries, aes(x=event_type, y=total_injury)) + 
+    geom_bar(stat="identity") + xlab("Event type") + ylab("Total injuries") + 
+    ggtitle("Injuries By Event Type") +
+    theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+
+**Property Damage**
+```{r}
+ggplot(data=top_property_damage, aes(x=event_type, y=total_property_damage)) + 
+    geom_bar(stat="identity") + xlab("Event type") + 
+    ylab("Total property damage") +  ggtitle("Property Damage By Event Type") + 
+    theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
